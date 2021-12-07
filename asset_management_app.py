@@ -7,11 +7,11 @@ from numpy import linalg
 import matplotlib.pyplot as plt
 from matplotlib.pyplot import figure
 import streamlit as st
-#import streamlit-tags
-
 
 mode = st.selectbox('Select mode',    ('Tracking error', 'Portfolio optimization (no RL asset)', 'Portfolio optimization (RL asset)'))
 number_assets = int(st.number_input('Enter number of assets'))
+breaker1 = False
+breaker2 = False
 
 if number_assets > 0:
     x = []
@@ -32,7 +32,11 @@ if number_assets > 0:
     for g in range(1, number_assets+1):
         df = pd.DataFrame(dct['row_%s' % g]).T
         covariance_matrix = pd.concat([covariance_matrix, df])
-    inverse_cov_matrix = pd.DataFrame(np.linalg.inv(covariance_matrix), columns = covariance_matrix.columns, index = covariance_matrix.index)
+    
+    breaker1 = True
+    if breaker1 == True:
+        inverse_cov_matrix = pd.DataFrame(np.linalg.inv(covariance_matrix), columns = covariance_matrix.columns, index = covariance_matrix.index)
+        breaker2 == True
 
 if mode == 'Tracking error':
     idx_vol = st.number_input('Enter index volatility', format='%.5f')
@@ -112,13 +116,14 @@ if mode == 'Tracking error':
         te = round(te,4)
         return te
 
-    col1, col2 = st.columns(2)
-    col1.metric('Tracking Error', calc_te(cor_coef, volatilities, idx_vols_array, inverse_cov_matrix, covariance_matrix), delta=None, delta_color="normal")
-    col2.metric('Tracking Error Portfolio Variance', calc_var_te(cor_coef, volatilities, idx_vols_array, inverse_cov_matrix, covariance_matrix))
-    st.subheader('Covariance Matrix', anchor=None)
-    st.table(data=covariance_matrix)
-    st.subheader('TE Portfolio Composition', anchor=None)
-    st.table(data=calc_x_te(cor_coef, volatilities, idx_vols_array, inverse_cov_matrix))
+    if breaker2 == True:
+        col1, col2 = st.columns(2)
+        col1.metric('Tracking Error', calc_te(cor_coef, volatilities, idx_vols_array, inverse_cov_matrix, covariance_matrix), delta=None, delta_color="normal")
+        col2.metric('Tracking Error Portfolio Variance', calc_var_te(cor_coef, volatilities, idx_vols_array, inverse_cov_matrix, covariance_matrix))
+        st.subheader('Covariance Matrix', anchor=None)
+        st.table(data=covariance_matrix)
+        st.subheader('TE Portfolio Composition', anchor=None)
+        st.table(data=calc_x_te(cor_coef, volatilities, idx_vols_array, inverse_cov_matrix))
 
 if mode == 'Portfolio optimization (no RL asset)':
     returns = np.empty(number_assets, dtype = float)
@@ -286,51 +291,52 @@ if mode == 'Portfolio optimization (no RL asset)':
         plt.ylabel('Expected Portfolio Returns')
         plt.title('Efficient Frontier')
 
-    st.subheader('Risk Efficient Frontier', anchor=None)
-    st.pyplot(fig=plot_eff_frontier(returns, inverse_cov_matrix, shortfall_prob))
-    st.set_option('deprecation.showPyplotGlobalUse', False)
+    if breaker2 == True:
+        st.subheader('Risk Efficient Frontier', anchor=None)
+        st.pyplot(fig=plot_eff_frontier(returns, inverse_cov_matrix, shortfall_prob))
+        st.set_option('deprecation.showPyplotGlobalUse', False)
 
-    st.subheader('Building Blocks', anchor=None)
-    col1, col2, col3 = st.columns(3)
-    col1.metric("A", round(calc_a(returns, inverse_cov_matrix),5))
-    col2.metric("B", round(calc_b(returns, inverse_cov_matrix),5))
-    col3.metric("C", round(calc_c(inverse_cov_matrix),5))
-    col4, col5 = st.columns(2)
-    col4.metric("D", round(calc_d(returns, inverse_cov_matrix),5))
-    col5.metric("Beta", round(calc_beta_no_riskless(returns, inverse_cov_matrix),5))
+        st.subheader('Building Blocks', anchor=None)
+        col1, col2, col3 = st.columns(3)
+        col1.metric("A", round(calc_a(returns, inverse_cov_matrix),5))
+        col2.metric("B", round(calc_b(returns, inverse_cov_matrix),5))
+        col3.metric("C", round(calc_c(inverse_cov_matrix),5))
+        col4, col5 = st.columns(2)
+        col4.metric("D", round(calc_d(returns, inverse_cov_matrix),5))
+        col5.metric("Beta", round(calc_beta_no_riskless(returns, inverse_cov_matrix),5))
 
-    st.subheader('Min-Var Portfolio', anchor=None)
-    col6, col7 = st.columns(2)
-    col6.metric('Variance', round(calc_variance_min(inverse_cov_matrix),5))
-    col7.metric('Return', round(calc_return_min(returns, inverse_cov_matrix),5))
-    st.table(data=calc_x_min_mvp(inverse_cov_matrix))
+        st.subheader('Min-Var Portfolio', anchor=None)
+        col6, col7 = st.columns(2)
+        col6.metric('Variance', round(calc_variance_min(inverse_cov_matrix),5))
+        col7.metric('Return', round(calc_return_min(returns, inverse_cov_matrix),5))
+        st.table(data=calc_x_min_mvp(inverse_cov_matrix))
 
-    st.subheader('Tangent Portfolio', anchor=None)
-    col8, col9 = st.columns(2)
-    col8.metric('Variance', round(calc_var_tang(returns, inverse_cov_matrix),5))
-    col9.metric('Return', round(calc_return_tang(returns, inverse_cov_matrix),5))
-    st.table(data=calc_x_tang(returns, inverse_cov_matrix))
+        st.subheader('Tangent Portfolio', anchor=None)
+        col8, col9 = st.columns(2)
+        col8.metric('Variance', round(calc_var_tang(returns, inverse_cov_matrix),5))
+        col9.metric('Return', round(calc_return_tang(returns, inverse_cov_matrix),5))
+        st.table(data=calc_x_tang(returns, inverse_cov_matrix))
 
-    st.subheader('Expected Return Portfolio', anchor=None)
-    col10, col11 = st.columns(2)
-    col10.metric('Variance', round(calc_variance_exp_re(returns, inverse_cov_matrix, expected_return),5))
-    col11.metric('Return', round(expected_return,5))
-    st.table(data=calc_x_exp_re(returns, inverse_cov_matrix, expected_return)) 
+        st.subheader('Expected Return Portfolio', anchor=None)
+        col10, col11 = st.columns(2)
+        col10.metric('Variance', round(calc_variance_exp_re(returns, inverse_cov_matrix, expected_return),5))
+        col11.metric('Return', round(expected_return,5))
+        st.table(data=calc_x_exp_re(returns, inverse_cov_matrix, expected_return)) 
 
-    st.subheader('Shortfall Probability', anchor=None)
-    col12, col13, col14, col15 = st.columns(4)
-    if calc_shortfall_prob(shortfall_prob, returns, inverse_cov_matrix)[0] > calc_return_min(returns, inverse_cov_matrix):
-        sf_return = calc_shortfall_prob(shortfall_prob, returns, inverse_cov_matrix)[1]
-        sf_variance = calc_shortfall_prob(shortfall_prob, returns, inverse_cov_matrix)[0]
-    else: 
-        sf_return = calc_shortfall_prob(shortfall_prob, returns, inverse_cov_matrix)[3]
-        sf_variance = calc_shortfall_prob(shortfall_prob, returns, inverse_cov_matrix)[2]    
-    col12.metric('Variance', round(sf_variance,5))
-    col13.metric('Return', round(sf_return,5))
-    col14.metric('Shortfall Probability', round(shortfall_prob, 5))
-    col15.metric('S', round(calc_shortfall_prob(shortfall_prob, returns, inverse_cov_matrix)[4],2))
-    st.subheader('Covariance Matrix', anchor=None)
-    st.table(data=covariance_matrix)
+        st.subheader('Shortfall Probability', anchor=None)
+        col12, col13, col14, col15 = st.columns(4)
+        if calc_shortfall_prob(shortfall_prob, returns, inverse_cov_matrix)[0] > calc_return_min(returns, inverse_cov_matrix):
+            sf_return = calc_shortfall_prob(shortfall_prob, returns, inverse_cov_matrix)[1]
+            sf_variance = calc_shortfall_prob(shortfall_prob, returns, inverse_cov_matrix)[0]
+        else: 
+            sf_return = calc_shortfall_prob(shortfall_prob, returns, inverse_cov_matrix)[3]
+            sf_variance = calc_shortfall_prob(shortfall_prob, returns, inverse_cov_matrix)[2]    
+        col12.metric('Variance', round(sf_variance,5))
+        col13.metric('Return', round(sf_return,5))
+        col14.metric('Shortfall Probability', round(shortfall_prob, 5))
+        col15.metric('S', round(calc_shortfall_prob(shortfall_prob, returns, inverse_cov_matrix)[4],2))
+        st.subheader('Covariance Matrix', anchor=None)
+        st.table(data=covariance_matrix)
 
 if mode == 'Portfolio optimization (RL asset)':
     returns = np.empty(number_assets, dtype = float)
@@ -488,53 +494,54 @@ if mode == 'Portfolio optimization (RL asset)':
         plt.ylabel('Expected Portfolio Returns')
         plt.title('Efficient Frontier')
 
-    st.subheader('Risk Efficient Frontier', anchor=None)
-    st.pyplot(fig=plot_eff_frontier(returns, inverse_cov_matrix, shortfall_prob))
-    st.set_option('deprecation.showPyplotGlobalUse', False)
+    if breaker2 == True:
+        st.subheader('Risk Efficient Frontier', anchor=None)
+        st.pyplot(fig=plot_eff_frontier(returns, inverse_cov_matrix, shortfall_prob))
+        st.set_option('deprecation.showPyplotGlobalUse', False)
 
-    st.subheader('Building Blocks', anchor=None)
-    col1, col2, col3, col4 = st.columns(4)
-    col1.metric("A", round(calc_a(returns, inverse_cov_matrix),5))
-    col2.metric("B", round(calc_b(returns, inverse_cov_matrix),5))
-    col3.metric("C", round(calc_c(inverse_cov_matrix),5))
-    col4.metric("D", round(calc_d(returns, inverse_cov_matrix),5))
-    col5, col6, col7, col8 = st.columns(4)
-    col5.metric("F", round(calc_f(returns, riskless_return, inverse_cov_matrix),5))
-    col6.metric("Beta", round(calc_beta(returns, riskless_return, inverse_cov_matrix),5))
-    col7.metric("Beta without riskless asset", round(calc_beta_no_riskless(returns, inverse_cov_matrix),5))
-    col8.metric("K", round(calc_k(riskless_return),5))
+        st.subheader('Building Blocks', anchor=None)
+        col1, col2, col3, col4 = st.columns(4)
+        col1.metric("A", round(calc_a(returns, inverse_cov_matrix),5))
+        col2.metric("B", round(calc_b(returns, inverse_cov_matrix),5))
+        col3.metric("C", round(calc_c(inverse_cov_matrix),5))
+        col4.metric("D", round(calc_d(returns, inverse_cov_matrix),5))
+        col5, col6, col7, col8 = st.columns(4)
+        col5.metric("F", round(calc_f(returns, riskless_return, inverse_cov_matrix),5))
+        col6.metric("Beta", round(calc_beta(returns, riskless_return, inverse_cov_matrix),5))
+        col7.metric("Beta without riskless asset", round(calc_beta_no_riskless(returns, inverse_cov_matrix),5))
+        col8.metric("K", round(calc_k(riskless_return),5))
 
-    st.subheader('Min-Var Portfolio', anchor=None)
-    col9, col10 = st.columns(2)
-    col9.metric('Variance', round(calc_variance_min(inverse_cov_matrix),5))
-    col10.metric('Return', round(calc_return_min(returns, inverse_cov_matrix),5))
-    st.table(data=calc_x_min_mvp(inverse_cov_matrix))
-    st.table(data=calc_pi(returns, riskless_return))
+        st.subheader('Min-Var Portfolio', anchor=None)
+        col9, col10 = st.columns(2)
+        col9.metric('Variance', round(calc_variance_min(inverse_cov_matrix),5))
+        col10.metric('Return', round(calc_return_min(returns, inverse_cov_matrix),5))
+        st.table(data=calc_x_min_mvp(inverse_cov_matrix))
+        st.table(data=calc_pi(returns, riskless_return))
 
-    st.subheader('Tangent Portfolio', anchor=None)
-    col11, col12 = st.columns(2)
-    col11.metric('Variance', round(calc_var_tang(returns, inverse_cov_matrix, riskless_return),5))
-    col12.metric('Return', round(calc_return_tang(returns, inverse_cov_matrix, riskless_return),5))
-    st.table(data=calc_x_tang(returns, inverse_cov_matrix, riskless_return))
+        st.subheader('Tangent Portfolio', anchor=None)
+        col11, col12 = st.columns(2)
+        col11.metric('Variance', round(calc_var_tang(returns, inverse_cov_matrix, riskless_return),5))
+        col12.metric('Return', round(calc_return_tang(returns, inverse_cov_matrix, riskless_return),5))
+        st.table(data=calc_x_tang(returns, inverse_cov_matrix, riskless_return))
 
-    st.subheader('Expected Return Portfolio', anchor=None)
-    col13, col14 = st.columns(2)
-    col13.metric('Variance', round(calc_variance_exp_re(returns, inverse_cov_matrix, expected_return, riskless_return),5))
-    col14.metric('Return', round(expected_return,5))
-    st.table(data=calc_x_exp_re(returns, inverse_cov_matrix, expected_return, riskless_return)) 
+        st.subheader('Expected Return Portfolio', anchor=None)
+        col13, col14 = st.columns(2)
+        col13.metric('Variance', round(calc_variance_exp_re(returns, inverse_cov_matrix, expected_return, riskless_return),5))
+        col14.metric('Return', round(expected_return,5))
+        st.table(data=calc_x_exp_re(returns, inverse_cov_matrix, expected_return, riskless_return)) 
 
-    # st.subheader('Shortfall Probability', anchor=None)
-    # col12, col13, col14, col15 = st.columns(4)
-    # if calc_shortfall_prob(shortfall_prob, returns, inverse_cov_matrix)[0] > calc_return_min(returns, inverse_cov_matrix):
-    #     sf_return = calc_shortfall_prob(shortfall_prob, returns, inverse_cov_matrix)[1]
-    #     sf_variance = calc_shortfall_prob(shortfall_prob, returns, inverse_cov_matrix)[0]
-    # else: 
-    #     sf_return = calc_shortfall_prob(shortfall_prob, returns, inverse_cov_matrix)[3]
-    #     sf_variance = calc_shortfall_prob(shortfall_prob, returns, inverse_cov_matrix)[2]    
-    # col12.metric('Variance', round(sf_variance,5))
-    # col13.metric('Return', round(sf_return,5))
-    # col14.metric('Shortfall Probability', round(shortfall_prob, 5))
-    # col15.metric('S', round(calc_shortfall_prob(shortfall_prob, returns, inverse_cov_matrix)[4],2))
+        # st.subheader('Shortfall Probability', anchor=None)
+        # col12, col13, col14, col15 = st.columns(4)
+        # if calc_shortfall_prob(shortfall_prob, returns, inverse_cov_matrix)[0] > calc_return_min(returns, inverse_cov_matrix):
+        #     sf_return = calc_shortfall_prob(shortfall_prob, returns, inverse_cov_matrix)[1]
+        #     sf_variance = calc_shortfall_prob(shortfall_prob, returns, inverse_cov_matrix)[0]
+        # else: 
+        #     sf_return = calc_shortfall_prob(shortfall_prob, returns, inverse_cov_matrix)[3]
+        #     sf_variance = calc_shortfall_prob(shortfall_prob, returns, inverse_cov_matrix)[2]    
+        # col12.metric('Variance', round(sf_variance,5))
+        # col13.metric('Return', round(sf_return,5))
+        # col14.metric('Shortfall Probability', round(shortfall_prob, 5))
+        # col15.metric('S', round(calc_shortfall_prob(shortfall_prob, returns, inverse_cov_matrix)[4],2))
 
-    st.subheader('Covariance Matrix', anchor=None)
-    st.table(data=covariance_matrix)
+        st.subheader('Covariance Matrix', anchor=None)
+        st.table(data=covariance_matrix)
