@@ -299,6 +299,7 @@ if number_assets > 0:
             st.subheader('Risk Efficient Frontier', anchor=None)
             st.pyplot(fig=plot_eff_frontier(returns, inverse_cov_matrix, shortfall_prob))
             st.set_option('deprecation.showPyplotGlobalUse', False)
+            st.write('Efficient frontier equation:', round(calc_variance_min(inverse_cov_matrix),5), '+', round(calc_beta_no_riskless(returns, inverse_cov_matrix),5), '(portfolio return - ', round(calc_return_min(returns, inverse_cov_matrix),5), ')^2')
 
             st.subheader('Building Blocks', anchor=None)
             col1, col2, col3 = st.columns(3)
@@ -504,6 +505,9 @@ if number_assets > 0:
             st.subheader('Risk Efficient Frontier', anchor=None)
             st.pyplot(fig=plot_eff_frontier(returns, inverse_cov_matrix, shortfall_prob))
             st.set_option('deprecation.showPyplotGlobalUse', False)
+            st.write('Riskfree efficient frontier equation:', round(calc_beta(returns, riskless_return, inverse_cov_matrix),5), '(portfolio return - ', riskless_return, ')^2')
+            st.write('Efficient frontier equation:', round(calc_variance_min(inverse_cov_matrix),5), '+', round(calc_beta_no_riskless(returns, inverse_cov_matrix),5), '(portfolio return - ', round(calc_return_min(returns, inverse_cov_matrix),5), ')^2')
+
 
             st.subheader('Building Blocks', anchor=None)
             col1, col2, col3, col4 = st.columns(4)
