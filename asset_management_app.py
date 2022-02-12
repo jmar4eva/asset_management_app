@@ -336,7 +336,7 @@ if number_assets > 0:
             else: 
                 sf_return = calc_shortfall_prob(shortfall_prob, returns, inverse_cov_matrix)[3]
                 sf_variance = calc_shortfall_prob(shortfall_prob, returns, inverse_cov_matrix)[2]    
-            col12.metric('Variance', round(sf_variance,5))
+            col12.metric('Standard Deviation', round(sf_variance,5))
             col13.metric('Return', round(sf_return,5))
             col14.metric('Shortfall Probability', round(shortfall_prob, 5))
             col15.metric('S', round(calc_shortfall_prob(shortfall_prob, returns, inverse_cov_matrix)[4],2))
