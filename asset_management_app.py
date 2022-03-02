@@ -118,9 +118,10 @@ if number_assets > 0:
 
         # if breaker2 == True:
         def run():
-            col1, col2 = st.columns(2)
+            col1, col2, col15 = st.columns(3)
             col1.metric('Tracking Error', calc_te(cor_coef, volatilities, idx_vols_array, inverse_cov_matrix, covariance_matrix), delta=None, delta_color="normal")
             col2.metric('Tracking Error Portfolio Variance', calc_var_te(cor_coef, volatilities, idx_vols_array, inverse_cov_matrix, covariance_matrix))
+            col15.metric('Covariance between TE and IDX', calc_cov_idx_te(cor_coef, volatilities, idx_vols_array, inverse_cov_matrix))
             st.subheader('Covariance Matrix', anchor=None)
             st.table(data=covariance_matrix)
             st.subheader('TE Portfolio Composition', anchor=None)
